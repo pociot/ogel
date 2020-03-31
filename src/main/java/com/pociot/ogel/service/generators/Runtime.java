@@ -2,7 +2,13 @@ package com.pociot.ogel.service.generators;
 
 import com.pociot.ogel.model.MachinesRuntime;
 import java.time.Duration;
+import lombok.Getter;
 
+/**
+ * Helper class for calculating uptime/downtime.
+ * Also calculates downtime percentage.
+ */
+@Getter
 public class Runtime {
   private Duration downtime;
   private Duration uptime;
@@ -24,20 +30,8 @@ public class Runtime {
     totalTime = totalTime.plus(duration);
   }
 
-  public MachinesRuntime getLastRecord() {
-    return lastRecord;
-  }
-
   public void setLastRecord(MachinesRuntime lastRecord) {
     this.lastRecord = lastRecord;
-  }
-
-  public Duration getDowntime() {
-    return downtime;
-  }
-
-  public Duration getUptime() {
-    return uptime;
   }
 
   public float getDowntimePercentage() {

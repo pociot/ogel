@@ -11,6 +11,9 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+/**
+ * Generates OEE report for every machine which has production and runtime events.
+ */
 public class ProductionReportsBuilder implements ProductionInitialized {
 
   private final Map<String, ProductionReportGenerator> generators;
@@ -19,6 +22,13 @@ public class ProductionReportsBuilder implements ProductionInitialized {
     generators = new HashMap<>();
   }
 
+  /**
+   * Report builder initializer. Takes list of production and runtime events
+   * and populates across generators.
+   * @param production - uncategorized production events
+   * @param runtime - uncategorized runtime events
+   * @return {@link ProductionReportsBuilder} with .build() method.
+   */
   public static ProductionInitialized fromEvents(List<MachinesProduction> production,
       List<MachinesRuntime> runtime) {
     ProductionReportsBuilder generator = new ProductionReportsBuilder();
@@ -46,6 +56,10 @@ public class ProductionReportsBuilder implements ProductionInitialized {
     return generators.get(machineName);
   }
 
+  /**
+   * Takes generators map and creates map of production reports.
+   * @return Map of machine names and associated reports.
+   */
   @Override
   public Map<String, ProductionReport> build() {
     return generators.entrySet().stream().collect(Collectors.toMap(

@@ -17,28 +17,39 @@ import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Production report generator. Based on production and runtime events for single
+ * machine this class generates report with values:
+ * - Total net production
+ * - Scrap percentage
+ * - Downtime percentage
+ * - Hourly net production
+ */
 @Slf4j
 public class ProductionReportGenerator {
-  private Map<LocalDateTime, MachinesRuntime> downtime;
-  private LocalDateTime dateTimeFrom;
-  private LocalDateTime dateTimeTo;
+  private LocalDateTime dateTimeFrom = LocalDateTime.MAX;
+  private LocalDateTime dateTimeTo = LocalDateTime.MIN;
+  private Map<LocalDateTime, MachinesRuntime> downtime = new TreeMap<>();
 
-  private Map<LocalDateTime, BigDecimal> productionByHour;
-
+  private Map<LocalDateTime, BigDecimal> productionByHour = new TreeMap<>();
   private BigDecimal productionSum = BigDecimal.ZERO;
   private BigDecimal scrapSum = BigDecimal.ZERO;
 
   private ProductionReportGenerator() {
-    downtime = new TreeMap<>();
-    productionByHour = new TreeMap<>();
-    dateTimeFrom = LocalDateTime.MAX;
-    dateTimeTo = LocalDateTime.MIN;
+    // hidden constructor
   }
 
+  /**
+   * Default object initializer.
+   * @return {@link ProductionReportGenerator}
+   */
   public static ProductionReportGenerator withDefaults() {
     return new ProductionReportGenerator();
   }
 
+  /**
+   * Populates {@link MachinesProduction} record of type PRODUCTION or SCRAP.
+   */
   public void addRecord(MachinesProduction record) {
     LocalDateTime hour = record.getDateTimeFrom().truncatedTo(HOURS);
     if (VariableName.PRODUCTION.equals(record.getVariableName())) {
@@ -54,8 +65,27 @@ public class ProductionReportGenerator {
     updateDateRange(record);
   }
 
+  /**
+   * Populates {@link MachinesRuntime} record.
+   */
   public void addRecord(MachinesRuntime record) {
     downtime.put(record.getDateTime(), record);
+  }
+
+  /**
+   * Creates report for single machine based on previously added events.
+   *
+   * @return {@link ProductionReport}
+   */
+  public ProductionReport getReport() {
+    return ProductionReport.builder()
+        .netProduction(totalNetProduction())
+        .scrapPercentage(scrapPercentage())
+        .downtime(totalDowntime())
+        .netProductionByHour(productionByHour)
+        .dateTimeFrom(dateTimeFrom)
+        .dateTimeTo(dateTimeTo)
+        .build();
   }
 
   private void addProductionByHour(MachinesProduction record, LocalDateTime hour) {
@@ -75,17 +105,6 @@ public class ProductionReportGenerator {
   private void applyProductionByHour(LocalDateTime hour, UnaryOperator<BigDecimal> function) {
     productionByHour
         .put(hour, function.apply(productionByHour.getOrDefault(hour, BigDecimal.ZERO)));
-  }
-
-  public ProductionReport getReport() {
-    return ProductionReport.builder()
-        .netProduction(totalNetProduction())
-        .scrapPercentage(scrapPercentage())
-        .downtime(totalDowntime())
-        .netProductionByHour(productionByHour)
-        .dateTimeFrom(dateTimeFrom)
-        .dateTimeTo(dateTimeTo)
-        .build();
   }
 
   private float totalDowntime() {

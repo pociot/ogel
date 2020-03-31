@@ -43,6 +43,7 @@ public class ProductionService {
   }
 
   public Map<String, ProductionReport> generate24hProductionReport(LocalDateTime startTime) {
+    log.info("Requested 24h production report for {}", startTime.toString());
     return ProductionReportsBuilder
         .fromEvents(getProductionRecordsFor24h(startTime), getRuntimeRecordsFor24h(startTime))
         .build();
@@ -53,6 +54,7 @@ public class ProductionService {
   }
 
   public Map<String, String> generate24hTemperatureCondition(LocalDateTime startTime) {
+    log.info("Requested 24h temperature report for {}", startTime.toString());
     return TemperatureReportsBuilder
         .fromEvents(getTemperatureRecordsFor24h(startTime))
         .build();
@@ -63,6 +65,7 @@ public class ProductionService {
   }
 
   public Map<String, OEEReport> generate24hOEEReport(LocalDateTime dateTime) {
+    log.info("Requested 24h OEE report for {}", dateTime.toString());
     return OEEReportBuilder
         .fromEvents(getProductionRecordsFor24h(dateTime), getRuntimeRecordsFor24h(dateTime))
         .build();

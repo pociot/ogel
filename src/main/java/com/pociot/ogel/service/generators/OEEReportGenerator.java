@@ -14,6 +14,14 @@ import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * OEE report generator. Based on production and runtime events for single
+ * machine this class generates report with values:
+ * - Performance
+ * - Availability
+ * - Quality
+ * - OEE (Overall Equipment Efficiency)
+ */
 @Slf4j
 public class OEEReportGenerator {
 
@@ -34,11 +42,22 @@ public class OEEReportGenerator {
     this.availabilityNorm = availabilityNorm;
   }
 
+  /**
+   * Default object initializer. Creates report with production norm 500 units per minute and
+   * availability norm 0.75.
+   *
+   * @return {@link OEEReportGenerator}
+   */
   public static OEEReportGenerator withDefaults() {
     return new OEEReportGenerator(BigDecimal.valueOf(500), BigDecimal.valueOf(0.75F));
   }
 
+  /**
+   * Populates {@link MachinesProduction} record of type PRODUCTION or SCRAP.
+   */
   public void addRecord(MachinesProduction record) {
+    log.debug("Received record of type {} with value {}", record.getVariableName(),
+        record.getValue());
     if (VariableName.PRODUCTION.equals(record.getVariableName())) {
       productionSum = productionSum.add(record.getValue());
     } else if (VariableName.SCRAP.equals(record.getVariableName())) {
@@ -50,10 +69,19 @@ public class OEEReportGenerator {
     updateDateRange(record);
   }
 
+  /**
+   * Populates {@link MachinesRuntime} record.
+   */
   public void addRecord(MachinesRuntime record) {
+    log.debug("Received record of type RUNTIME with value {}", record.getIsRunning());
     runtimeCache.put(record.getDateTime(), record);
   }
 
+  /**
+   * Creates report for single machine based on previously added events.
+   *
+   * @return {@link OEEReport}
+   */
   public OEEReport getReport() {
     return OEEReport.builder()
         .performance(performance())
@@ -94,7 +122,8 @@ public class OEEReportGenerator {
   private BiFunction<Runtime, MachinesRuntime, Runtime> reduceUptime() {
     return (runtime1, machinesRuntime) -> {
       if (runtime1.getLastRecord() != null) {
-        Duration duration = Duration.between(runtime1.getLastRecord().getDateTime(), machinesRuntime.getDateTime());
+        Duration duration = Duration
+            .between(runtime1.getLastRecord().getDateTime(), machinesRuntime.getDateTime());
         runtime1.addRuntime(machinesRuntime.getIsRunning(), duration);
       }
       runtime1.setLastRecord(machinesRuntime);
